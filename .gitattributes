@@ -1,2 +1,6 @@
 # Auto detect text files and perform LF normalization
 * text=auto
+rendering_environment[[:space:]]-[[:space:]]static filter=lfs diff=lfs merge=lfs -text
+prototypes filter=lfs diff=lfs merge=lfs -text
+prototypes/** filter=lfs diff=lfs merge=lfs -text
+rendering_environment[[:space:]]-[[:space:]]static/** filter=lfs diff=lfs merge=lfs -text
