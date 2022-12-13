@@ -1,0 +1,86 @@
+#ifndef NP_ECS_RENDER_SYSTEM_HPP
+#define NP_ECS_RENDER_SYSTEM_HPP
+
+//Includes:
+#include "../components/sprite.h"
+#include "../../ecs/include/core.h"
+#include <unordered_map>
+
+#include <SFML/Graphics.hpp>
+
+//https://www.sfml-dev.org/tutorials/2.4/graphics-draw.php#drawing-from-threads
+
+namespace np_app
+{
+	class RenderSystem : public np_ecs::ISystem
+	{
+	private:
+		//Attributes:
+		std::unordered_map<std::string, sf::Texture*> textures;
+		std::mutex mutex;
+		const unsigned int sprite_flag = np_ecs::get_bit_flag<Sprite>();
+
+	public:
+		//Constructor:
+		RenderSystem()
+		{
+			//window.create(sf::VideoMode(sim::width, sim::height), "SFML Works!");
+		}
+
+		//Methods:
+		Sprite get_sprite(std::string filepath, bool smooth = false, sf::IntRect boundary = sf::IntRect())
+		{
+			if (textures.find(filepath) == textures.end())
+			{
+				sf::Texture* texture = new sf::Texture();
+				assert(texture->loadFromFile(filepath, boundary));
+
+				textures.emplace(filepath, texture);
+			}
+
+			Sprite sprite;
+			sprite.texture = textures[filepath];
+			sprite.texture->setSmooth(smooth);
+			sprite.sprite.setTexture(*sprite.texture);
+
+			return sprite;
+		}
+
+		np_ecs::Result update()
+		{
+			if (world() == nullptr) return np_ecs::Result::Failure;
+
+			sf::RenderWindow window(sf::VideoMode(sim::width, sim::height), "SFML Works!");
+			window.setFramerateLimit(30);
+
+			while (window.isOpen())
+			{
+				sf::Event ev;
+
+				while (window.pollEvent(ev))
+				{
+					if (ev.type == sf::Event::Closed) window.close();
+				}
+
+				window.clear();
+
+				for (int i = 0; i < entities.size(); i++)
+				{
+					window.draw(world()->get_component<Sprite>(entities[i], sprite_flag).sprite);
+				}
+
+				window.display();
+			}
+
+			window.setActive(false);
+			return np_ecs::Result::Sucess;
+		}
+
+		np_ecs::Result start()
+		{
+			return np_ecs::Result::Sucess;
+		}
+	};
+}
+
+#endif // !NP_ECS_RENDER_SYSTEM_HPP

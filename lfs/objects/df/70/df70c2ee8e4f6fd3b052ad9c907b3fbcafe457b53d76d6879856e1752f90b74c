@@ -1,0 +1,48 @@
+#ifndef NP_ECS_TEST_SYSTEM_HPP
+#define NP_ECS_TEST_SYSTEM_HPP
+
+//Includes:
+#include "../components/sprite.h"
+#include "../../ecs/include/core.h"
+#include <unordered_map>
+#include <SFML/Graphics.hpp>
+#include <string>
+
+namespace np_app
+{
+	struct Message : public IComponent
+	{
+	public:
+		Message(std::string s) : text(s) { }
+		Message() { text = "NULL"; }
+		std::string text;
+	};
+
+	class TestSystem : public np_ecs::ISystem
+	{
+	public:
+		const unsigned int message_flag = np_ecs::get_bit_flag<Message>();
+
+		TestSystem()
+		{
+
+		}
+
+		np_ecs::Result update()
+		{
+			for (int i = 0; i < entities.size(); i++)
+			{
+				std::cout << world()->get_component<Message>(entities[i]).text << std::endl;
+			}
+
+			return np_ecs::Result::Sucess;
+		}
+
+		np_ecs::Result start()
+		{
+			return np_ecs::Result::Sucess;
+		}
+	};
+}
+
+#endif //!NP_ECS_TEST_SYSTEM_HPP
