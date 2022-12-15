@@ -1,0 +1,145 @@
+#ifndef NP_ECS_CORE_H
+#define NP_ECS_CORE_H
+
+//Includes:
+#include <unordered_map>
+#include "../allocators/components.hpp"
+#include "../logic/system.h"
+#include "../storage/components.hpp"
+#include <algorithm>
+#include "../parallel/thread_allocator.hpp"
+
+namespace np_ecs
+{
+	struct BaseContainer { };
+
+	template<typename T> struct Container : public BaseContainer
+	{
+	public:
+		//Attributes:
+		std::vector<T*> components;
+
+		//Constructor:
+		Container() { }
+		Container(unsigned int size) { components.resize(size); }
+
+		//Methods:
+		void add_component(entity_t entity, T component)
+		{
+			assert(entity < components.size());
+			T* t = new T();
+			*t = component;
+			components[entity] = t;
+		}
+
+		//Operators:
+		T& operator[] (entity_t entity) { assert(entity < components.size()); return *components[entity]; }
+	};
+
+	class World
+	{
+	private:
+		//Attributes:
+		unsigned int entity_max, component_max;
+		EntityAllocator entity_allocator;
+		DynBitmask signature;
+		std::vector<BaseContainer*> containers;
+		std::vector<ISystem*> systems;
+		ThreadAllocator thread_allocator;
+
+	public:
+		//Constructors:
+		World() : entity_max(NULL), component_max(NULL) { }
+		World(unsigned int max_components, unsigned int max_entities) : entity_max(max_entities), component_max(max_components) { containers.resize(max_components); }
+
+
+		//Methods:
+		void initialise()
+		{
+
+		}
+
+		void update()
+		{
+			//std::for_each(systems.begin(), systems.end(), [](std::pair<size_t, ISystem*> p) { p.second->update();  });
+
+			for (int i = 0; i < systems.size(); i++)
+			{
+				//pool.poll_task(std::bind(&ISystem::update, pair.second));
+				if(!systems[i]->parallel) systems[i]->update();
+			}
+		}
+
+		template<typename S> ISystem* register_system(DynBitmask bitmask, bool parallel = false)
+		{
+			assert(validate_system(S));
+
+			ISystem* s = (ISystem*) new S();
+			s->local_world = this;
+			s->signature = bitmask.get_decimal();
+
+			if (parallel && thread_allocator.Assign(std::bind(&ISystem::update, s))) s->parallel = true;
+
+			systems.push_back(s);
+
+			//Add any entities with components to the system.
+			for (int i = 0; i < entity_allocator.signatures.size(); i++)
+			{
+				if (entity_allocator.signatures[i].has_signature(bitmask))
+				{
+					emplace(s->entities, i, 0, s->entities.size());
+				}
+			}
+
+			return s;
+		}
+
+		template<typename T> T& get_component(entity_t entity, index_t bit_flag)
+		{
+			return (*static_cast<Container<T>*>(containers[bit_flag]))[entity];
+		}
+
+		template<typename T> T& get_component(entity_t entity)
+		{
+			size_t flag = get_bit_flag<T>();
+			return (*static_cast<Container<T>*>(containers[flag]))[entity];
+		}
+
+		template<typename T> void add_component(entity_t entity, T component)
+		{
+			assert(entity_allocator.validate(entity));
+
+			size_t bit_flag = get_bit_flag<T>();
+
+			//Register component.
+			if (!signature.has_bit(bit_flag))
+			{
+				containers[bit_flag] = new Container<T>(component_max);
+				signature.set(bit_flag, true);
+			}
+
+			//Add component signature to entity.
+			entity_allocator.get(entity).set(bit_flag, true);
+			static_cast<Container<T>*>(containers[bit_flag])->add_component(entity, component);
+
+			//Add entity to relevant collections.
+			for(int i = 0; i < systems.size(); i++)
+			{
+				if (systems[i]->signature == bit_flag)
+				{
+					emplace(systems[i]->entities, entity, 0, systems[i]->entities.size());
+				}
+
+				//Subset for entity with only the added component.
+				else if (entity_allocator.signatures[entity].has_signature(systems[i]->signature))
+				{
+					emplace(systems[i]->entities, entity, 0, systems[i]->entities.size());
+				}
+			}
+		}
+
+		entity_t generate_entity() { return entity_allocator.allocate(); }
+	};
+}
+
+#endif // !NP_ECS_CORE_H
