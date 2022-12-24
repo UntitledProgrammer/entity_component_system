@@ -1,0 +1,29 @@
+#include "core.h"
+
+void np_ecs::World::initialise()
+{
+	for (int i = 0; i < systems.size(); i++)
+	{
+		if (!systems[i]->parallel) systems[i]->start();
+	}
+}
+
+void np_ecs::World::update()
+{
+	//Process tasks: adding and removing components from entities.
+	while (!tasks.empty())
+	{
+		ITask* task = tasks.front();
+		
+		if (task.remove)
+		{
+			containers[task.component_flag];
+		}
+	}
+
+	//Update systems.
+	for (int i = 0; i < systems.size(); i++)
+	{
+		if (!systems[i]->parallel) systems[i]->update();
+	}
+}
