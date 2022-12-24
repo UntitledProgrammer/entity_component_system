@@ -1,0 +1,44 @@
+#ifndef NP_ECS_COMPONENT_STORAGE_HPP
+#define NP_ECS_COMPONENT_STORAGE_HPP
+
+//Includes:
+#include "components.hpp"
+
+namespace np_ecs
+{
+	class IContainer
+	{
+
+	};
+
+	struct ComponentArray : public IContainer
+	{
+	public:
+		//Attributes:
+		std::vector<IComponent*> components;
+
+		//Constructor:
+		ComponentArray() { }
+		ComponentArray(unsigned int size) { components.resize(size); }
+
+		//Methods:
+		void add_component(entity_t entity, IComponent* component)
+		{
+			assert(entity < components.size());
+			components[entity] = t;
+		}
+
+		bool has_entity(entity_t entity) { return entity < components.size() || components[entity] != nullptr; }
+
+		void remove_component(entity_t entity)
+		{
+			assert(has_entity());
+			components[entity] = nullptr;
+		}
+
+		//Operators:
+		T& operator[] (entity_t entity) { assert(entity < components.size() && components[entity] != nullptr); return *components[entity]; }
+	};
+}
+
+#endif //!NP_ECS_COMPONENT_STORAGE_HPP
