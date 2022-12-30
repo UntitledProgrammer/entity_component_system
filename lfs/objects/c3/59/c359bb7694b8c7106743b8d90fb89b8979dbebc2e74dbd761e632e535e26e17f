@@ -1,0 +1,57 @@
+// Environment Simulation.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+#include <stdlib.h>
+#include <iostream>
+#include <SFML/Graphics.hpp>
+#include "Constraints.h"
+#include "application/systems/rendering.hpp"
+#include "ecs/include/core.h"
+#include "profiler/src/Timer.h"
+#include "ecs/storage/subset.hpp"
+#include "application/systems/phyics.hpp"
+#include "application/world.h"
+#include "application/systems/test_system.hpp"
+
+
+
+
+int main()
+{
+	np_app::Timer timer;
+	std::srand(timer.elapsed_milliseconds());
+	np_ecs::World world = np_ecs::World(20, 20);
+	np_app::RenderSystem* render_system = (np_app::RenderSystem*) world.register_system<np_app::RenderSystem>(np_ecs::get_architype<Sprite, np_app::Rigidbody>(), false);
+	np_app::Physics* physics_system = (np_app::Physics*) world.register_system<np_app::Physics>(np_ecs::get_architype<Sprite>(), true);
+
+	for (int i = 0; i < 10; i++)
+	{
+		np_ecs::entity_t entity = world.generate_entity();
+
+		Sprite sprite = render_system->get_sprite("asteroid.png");
+		sprite.sprite.setScale(sf::Vector2f(0.25f, 0.25f));
+		sprite.sprite.setPosition(sf::Vector2f(std::rand() % sim::width + 0, std::rand() % sim::height + 0));
+		world.schedule_add_component(entity, new Sprite(sprite), np_ecs::get_bit_flag<Sprite>());
+		world.schedule_add_component(entity, new np_app::Rigidbody(2000.00f, &sprite), np_ecs::get_bit_flag<np_app::Rigidbody>());
+	}
+
+	//Window loop:
+
+	int i = 0;
+	while (true)
+	{
+		world.update();
+
+		
+		if (i == 500) 
+		{ 
+			world.schedule_delete_component(1, np_ecs::get_bit_flag<Sprite>()); 
+			world.schedule_delete_component(2, np_ecs::get_bit_flag<Sprite>());
+			world.schedule_delete_component(3, np_ecs::get_bit_flag<Sprite>());
+			world.schedule_delete_component(4, np_ecs::get_bit_flag<Sprite>());
+		}
+		i++;
+
+	}
+
+}
