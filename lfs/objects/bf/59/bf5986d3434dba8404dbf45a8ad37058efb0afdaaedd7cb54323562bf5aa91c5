@@ -1,0 +1,59 @@
+#pragma once
+
+//Includes:
+#include "rendering.hpp"
+
+namespace np_app
+{
+	class EffectsSystem : public np_ecs::ISystem
+	{
+	public:
+		//Attributes:
+		const unsigned int sprite_flag = np_ecs::get_bit_flag<Sprite>();
+		const unsigned int origin = 1;
+		const unsigned int max = 255;
+		sf::Color tint = sf::Color(origin, origin, origin, max);
+		unsigned int index = 0;
+
+		//Constructor:
+		EffectsSystem() { }
+
+		//Methods:
+		np_ecs::Result update()
+		{
+			switch (index)
+			{
+			case 0:
+				tint.r += 1;
+				if (tint.r >= max) { tint.r = origin; index++; }
+				break;
+
+			case 1:
+				tint.g += 1;
+				if (tint.g >= max) { tint.g = origin; index++; }
+				break;
+
+			case 2:
+				tint.b += 1;
+				if (tint.b >= max) { tint.b = origin; index = 0; }
+				break;
+
+			default:
+				break;
+			}
+
+			for (int i = 0; i < entities.size(); i++)
+			{
+				Sprite* sprite = (Sprite*) world()->get_component(entities[i], sprite_flag);
+				sprite->sprite.setColor(tint);
+			}
+
+			return np_ecs::Result::Sucess;
+		}
+
+		np_ecs::Result start()
+		{
+			return np_ecs::Result::Sucess;
+		}
+	};
+}

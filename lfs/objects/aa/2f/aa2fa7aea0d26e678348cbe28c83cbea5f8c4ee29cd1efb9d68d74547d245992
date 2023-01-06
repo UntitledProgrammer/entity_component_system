@@ -1,0 +1,46 @@
+// Environment Simulation.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+#include <stdlib.h>
+#include <iostream>
+#include <SFML/Graphics.hpp>
+#include "Constraints.h"
+#include "application/systems/effects.hpp"
+#include "ecs/include/core.h"
+#include "profiler/src/Timer.h"
+#include "ecs/storage/subset.hpp"
+#include "application/systems/phyics.hpp"
+#include "application/world.h"
+#include "application/systems/test_system.hpp"
+#
+
+
+
+int main()
+{
+	np_app::Timer timer;
+	std::srand(timer.elapsed_milliseconds());
+	np_ecs::World world = np_ecs::World(40, 40);
+
+	np_app::RenderSystem* render_system = (np_app::RenderSystem*)world.register_system<np_app::RenderSystem>(np_ecs::get_architype<np_app::Rigidbody>(), false);
+	np_app::Physics* physics_system = (np_app::Physics*)world.register_system<np_app::Physics>(np_ecs::get_architype<Sprite, np_app::Rigidbody>(), true);
+	np_app::EffectsSystem* effects = (np_app::EffectsSystem*)world.register_system<np_app::EffectsSystem>(np_ecs::get_architype<Sprite>(), true);
+
+
+	for (int i = 0; i < 40; i++)
+	{
+		np_ecs::entity_t entity = world.generate_entity();
+		Sprite sprite = render_system->get_sprite("asteroid.png");
+		sprite.sprite.setScale(sf::Vector2f(0.25f, 0.25f));
+		sprite.sprite.setPosition(sf::Vector2f(std::rand() % sim::width + 0, 0.0f));
+		world.schedule_add_component(entity, new Sprite(sprite), np_ecs::get_bit_flag<Sprite>());
+		world.schedule_add_component(entity, new np_app::Rigidbody((static_cast <float> (rand()) / static_cast <float> (RAND_MAX)) * 00000000.1f, sprite.sprite.getPosition(), &sprite), np_ecs::get_bit_flag<np_app::Rigidbody>());
+	}
+
+	//Window loop:
+	while (true)
+	{
+		world.update();
+	}
+
+}

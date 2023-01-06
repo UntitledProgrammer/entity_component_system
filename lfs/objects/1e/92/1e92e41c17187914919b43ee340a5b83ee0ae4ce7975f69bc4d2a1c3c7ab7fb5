@@ -1,0 +1,24 @@
+#ifndef NP_APP_RIGIDBODY_HPP
+#define NP_APP_RIGIDBODY_HPP
+
+//Includes:
+#include <SFML/Graphics.hpp>
+#include "../../ecs/storage/components.hpp"
+
+namespace np_app
+{
+	struct Rigidbody : public np_ecs::IComponent
+	{
+	public:
+		//Attributes:
+		sf::Vector2f speed;
+		sf::Vector2f origin;
+		Sprite* sprite;
+
+		//Constructor:
+		Rigidbody() : speed(sf::Vector2f()), sprite(nullptr) {}
+		Rigidbody(float mass, sf::Vector2f origin, Sprite* sprite) : speed(sf::Vector2f(0, mass)), sprite(sprite), origin(origin) {}
+	};
+}
+
+#endif // !NP_APP_RIGIDBODY_HPP

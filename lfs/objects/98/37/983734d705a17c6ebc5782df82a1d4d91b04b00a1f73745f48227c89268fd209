@@ -1,0 +1,35 @@
+// Environment Simulation.cpp : This file contains the 'main' function. Program execution begins and ends there.
+//
+
+#include <stdlib.h>
+#include <iostream>
+#include <SFML/Graphics.hpp>
+#include "Constraints.h"
+#include "application/systems/effects.hpp"
+#include "ecs/include/core.h"
+#include "profiler/src/Timer.h"
+#include "ecs/storage/subset.hpp"
+#include "application/systems/phyics.hpp"
+#include "application/world.h"
+#include "application/systems/test_system.hpp"
+#
+
+
+
+int main()
+{
+	np_app::Timer timer;
+	std::srand(timer.elapsed_milliseconds());
+	np_ecs::World world = np_ecs::World(40, 40);
+
+	np_ecs::get_bit_flag<int>();
+
+	np_app::RenderSystem* render_system = (np_app::RenderSystem*)world.register_system<np_app::RenderSystem>(np_ecs::get_architype<np_app::Rigidbody>(), false);
+
+	//Window loop:
+	while (true)
+	{
+		world.update();
+	}
+
+}
